@@ -3,12 +3,12 @@
 use std::iter::FromIterator;
 
 
-enum ShaType {
+enum Sha2Type {
     Sha256,
     Sha224
 
 }
-impl ShaType {
+impl Sha2Type {
     pub fn get_h(&self) -> [u32; 8] {
         match self {
             Self::Sha256 => [0x6a09e667,  0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19],
@@ -31,16 +31,16 @@ impl ShaType {
 }
 pub struct Sha2 {
     msg: Vec<u8>,
-    sha_type: ShaType,
+    sha_type: Sha2Type,
 }
 
 impl Sha2 {
     pub fn sha256() -> Self {
-        Self{msg: Vec::new(), sha_type: ShaType::Sha256}
+        Self{msg: Vec::new(), sha_type: Sha2Type::Sha256}
     }
 
     pub fn sha224() -> Self {
-        Self{msg: Vec::new(), sha_type: ShaType::Sha224}
+        Self{msg: Vec::new(), sha_type: Sha2Type::Sha224}
     }
 
     fn ch (x: u32, y: u32, z:u32) -> u32 {
@@ -161,7 +161,7 @@ impl Sha2 {
         vec.append(&mut Vec::from_iter(h0[5].to_be_bytes().iter().cloned()));
         vec.append(&mut Vec::from_iter(h0[6].to_be_bytes().iter().cloned()));
         match self.sha_type {
-            ShaType::Sha256 => vec.append(&mut Vec::from_iter(h0[7].to_be_bytes().iter().cloned())),
+            Sha2Type::Sha256 => vec.append(&mut Vec::from_iter(h0[7].to_be_bytes().iter().cloned())),
             _ => (),
         }
         
