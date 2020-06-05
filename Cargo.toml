@@ -1,5 +1,5 @@
 [package]
-name = "RTEST"
+name = "crypto-rs"
 version = "0.1.0"
 authors = ["p.classen <p.classen@otterbach.de>"]
 edition = "2018"
