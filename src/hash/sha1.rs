@@ -88,8 +88,8 @@ impl Sha1 {
             let mut d = h0[3];
             let mut e = h0[4];
 
-            for i in 0..80 {
-                let temp = a.rotate_left(5).overflowing_add(Self::f(i, b, c, d)).0.overflowing_add(e).0.overflowing_add(w[i]).0.overflowing_add(Self::get_k(i)).0;
+            for (i, w) in w.iter().enumerate() {
+                let temp = a.rotate_left(5).overflowing_add(Self::f(i, b, c, d)).0.overflowing_add(e).0.overflowing_add(*w).0.overflowing_add(Self::get_k(i)).0;
 
                 e = d;
                 d = c;
@@ -128,7 +128,7 @@ impl Sha1 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn sha1_test() {
         let mut sha = Sha1::sha1();

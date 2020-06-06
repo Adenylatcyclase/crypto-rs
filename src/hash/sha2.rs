@@ -17,16 +17,14 @@ impl Sha2Type {
     }
 
     pub fn get_k (&self) -> Vec<u32> {
-        match self {
-            _ => vec![0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-                      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-                      0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-                      0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-                      0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-                      0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-                      0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-                      0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2],
-        }
+        vec![0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+             0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+             0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+             0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+             0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+             0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+             0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+             0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]
     }
 }
 pub struct Sha2 {
@@ -124,10 +122,10 @@ impl Sha2 {
             let mut g = h0[6];
             let mut h = h0[7];
 
-            for i in 0..64 {
+            for (i, w) in w.iter().enumerate() {
                 let S1 = Self::bsig1(e);
                 let ch = Self::ch(e, f, g);
-                let temp1 = h.overflowing_add(S1).0.overflowing_add(ch).0.overflowing_add(k[i]).0.overflowing_add(w[i]).0;
+                let temp1 = h.overflowing_add(S1).0.overflowing_add(ch).0.overflowing_add(k[i]).0.overflowing_add(*w).0;
                 let S0 = Self::bsig0(a);
                 let maj = Self::maj(a, b, c);
                 let temp2 = S0.overflowing_add(maj).0;
@@ -160,9 +158,8 @@ impl Sha2 {
         vec.append(&mut Vec::from_iter(h0[4].to_be_bytes().iter().cloned()));
         vec.append(&mut Vec::from_iter(h0[5].to_be_bytes().iter().cloned()));
         vec.append(&mut Vec::from_iter(h0[6].to_be_bytes().iter().cloned()));
-        match self.sha_type {
-            Sha2Type::Sha256 => vec.append(&mut Vec::from_iter(h0[7].to_be_bytes().iter().cloned())),
-            _ => (),
+        if let Sha2Type::Sha256 = self.sha_type {
+            vec.append(&mut Vec::from_iter(h0[7].to_be_bytes().iter().cloned()));
         }
         
         vec
