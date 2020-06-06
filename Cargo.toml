@@ -1,8 +1,13 @@
 [package]
 name = "crypto-rs"
-version = "0.1.0"
-authors = ["p.classen <p.classen@otterbach.de>"]
+version = "0.2.0"
+authors = ["Adenylatcyclase <streicher1993@googlemail.com>"]
 edition = "2018"
+description = "Hobby Implementation of various Crypto functions in pure rust"
+repository = "https://github.com/Adenylatcyclase/crypto-rs"
+readme = "README.md"
+license-file = "LICENSE"
+keywords = ["crypto", "cryptography", "hobby", "hash", "sha", "md5"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
