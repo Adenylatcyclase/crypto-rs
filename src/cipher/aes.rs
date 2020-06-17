@@ -148,7 +148,16 @@ impl AES {
         }
     }
 
-    fn add_round_key(&mut self) {}
+    fn add_round_key(&mut self, state: &mut[[u8; 4]; 4], round: usize) {
+        for i in 0..4 {
+            let r = self.key_schedule[4 * round + i];
+            state[0][i] ^= (r >> 24) as u8;
+            state[1][i] ^= ((r >> 16) & 0xff) as u8;
+            state[2][i] ^= ((r >> 8) & 0xff) as u8;
+            state[3][i] ^= (r & 0xff) as u8;
+        }
+    }
+
     fn inv_shift_rows(&mut self) {}
     fn inv_sub_bytes(&mut self) {}
     fn inv_mix_columns(&mut self) {}
@@ -237,5 +246,20 @@ mod tests {
                            [0x4d,  0xdc,  0xc6,  0xd5],
                            [0xa1,  0x58,  0xc6,  0xd7],
                            [0xbc,  0x9d,  0xc6,  0xd6]]);
+    }
+
+    #[test]
+    fn add_round_key_test() {
+        let mut aes = AES::aes(&[0x54, 0x68, 0x61, 0x74, 0x73, 0x20, 0x6D, 0x79, 0x20, 0x4B, 0x75, 0x6E, 0x67, 0x20, 0x46, 0x75], &[0xff]);
+        aes.expand_key();
+        let mut state =  [[0x15, 0xC9, 0x7F, 0x9D], 
+                          [0xCE, 0x4D, 0x4B, 0xC2], 
+                          [0x89, 0x71, 0xBE, 0x88], 
+                          [0x65, 0x47, 0x97, 0xCD]];
+        aes.add_round_key(&mut state, 2);
+        assert_eq!(state, [[0x43, 0x0E, 0x09, 0x3D], 
+                           [0xC6, 0x57, 0x08, 0xF8], 
+                           [0xA9, 0xC0, 0xEB, 0x7F], 
+                           [0x62, 0xC8, 0xFE, 0x37]])
     }
 }
