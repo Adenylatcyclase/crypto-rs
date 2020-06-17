@@ -209,6 +209,7 @@ mod tests {
     fn expand_key_test() {
         // test data
         // https://kavaliro.com/wp-content/uploads/2014/03/AES.pdf
+        // round key 6 has as mall error where there is a B7 in the last byte of the first word instead of a 87
         let mut aes = AES::aes(&[0x54, 0x68, 0x61, 0x74, 0x73, 0x20, 0x6D, 0x79, 0x20, 0x4B, 0x75, 0x6E, 0x67, 0x20, 0x46, 0x75], &[0xff]);
         aes.expand_key();
         assert_eq!(aes.key_schedule, vec![0x54686174, 0x73206D79, 0x204B756E, 0x67204675, 
@@ -223,7 +224,7 @@ mod tests {
                                           0xBFE2BF90, 0x4559FAB2, 0xA16480B4, 0xF7F1CBD8, 
                                           0x28FDDEF8, 0x6DA4244A, 0xCCC0A4FE, 0x3B316F26]);
     }
-    
+
     #[test]
     fn mix_columns_test() {
         let aes = AES::aes(&[0xff], &[0xff]);
