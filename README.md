@@ -12,14 +12,14 @@ Currently this is just a learning experience for me by implementing various cryp
 - - [ ] cbc encrypt implementation
 - - [ ] cbc decrypt implementation
 - [ ] general fixes
-- - [ ] padding module
-- - - [ ] bit padding like in md5 and sha [RFC1321](http://www.faqs.org/rfcs/rfc1321.html)
-- - - [ ] pxcs#7 padding [RFC5652](https://tools.ietf.org/html/rfc5652#section-6.3)
+- - [x] padding module
+- - - [x] bit padding like in md5 and sha [RFC1321](http://www.faqs.org/rfcs/rfc1321.html)
+- - - [x] pxcs#7 padding [RFC5652](https://tools.ietf.org/html/rfc5652#section-6.3)
 - - [ ] Hash fixes
 - - - [ ] hashes as simple methods
-- - - [ ] use bytes module for turning objects into &[u8]
+- - - [x] use bytes module for turning objects into &[u8]
 - - - [ ] HashMessage object for api similar to pythons hashlib
 - - [ ] AES fixes
-- - - [ ] misc functions like galois in separate modul
+- - - [x] misc functions like galois in separate modul
 - - - [ ] parameterize functions properls and dont rely on fixed length arrays -> Result?
 - [ ] PBKDF2 -> [RFC8018](https://tools.ietf.org/html/rfc8018)
