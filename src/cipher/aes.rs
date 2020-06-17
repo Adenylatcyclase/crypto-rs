@@ -162,7 +162,37 @@ impl AES {
     fn inv_sub_bytes(&mut self) {}
     fn inv_mix_columns(&mut self) {}
     fn inv_add_round_key(&mut self) {}
-    fn encrypt(&mut self) {}
+    fn cipher(&mut self, msg: &[u8; 16]) -> [u8; 16] {
+        let mut state = [[0u8; 4]; 4];
+        for row in 0..4 {
+            for col in 0..4 {
+                state[row][col] = msg[4 * col + row];
+            }
+        }
+        self.add_round_key(&mut state, 0);
+
+        for round in 1..self.nr {
+            self.sub_bytes(&mut state);
+            self.shift_rows(&mut state);
+            self.mix_columns(&mut state);
+            self.add_round_key(&mut state, round);
+        }
+
+        self.sub_bytes(&mut state);
+        self.shift_rows(&mut state);
+        self.add_round_key(&mut state, 10);
+
+        let mut out = [0u8; 16];
+        for row in 0..4 {
+            for col in 0..4 {
+                out[4 * col + row] = state[row][col];
+            }
+        }
+        return out;
+    }
+    fn encrypt(&mut self) {
+
+    }
 }
 
 
@@ -261,5 +291,20 @@ mod tests {
                            [0xC6, 0x57, 0x08, 0xF8], 
                            [0xA9, 0xC0, 0xEB, 0x7F], 
                            [0x62, 0xC8, 0xFE, 0x37]])
+    }
+
+    #[test]
+    fn cipher_test() {
+        let mut aes = AES::aes(&[0x54, 0x68, 0x61, 0x74, 0x73, 0x20, 0x6D, 0x79, 0x20, 0x4B, 0x75, 0x6E, 0x67, 0x20, 0x46, 0x75], &[0xff]);
+        aes.expand_key();
+        let cipher = aes.cipher(&[0x54, 0x77, 0x6F, 0x20,
+                                  0x4F, 0x6E, 0x65, 0x20,
+                                  0x4E, 0x69, 0x6E, 0x65,
+                                  0x20, 0x54, 0x77, 0x6F]);
+                                  
+        assert_eq!(cipher, [0x29, 0xC3, 0x50, 0x5F,
+                            0x57, 0x14, 0x20, 0xF6,
+                            0x40, 0x22, 0x99, 0xB3,
+                            0x1A, 0x02, 0xD7, 0x3A])
     }
 }
