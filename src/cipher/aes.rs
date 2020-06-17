@@ -4,23 +4,31 @@ use std::iter::FromIterator;
 struct AES {
     message: Vec<u8>,
     key: Vec<u8>,
+    key_schedule: Vec<u32>,
     iv: Vec<u8>,
     key_len: usize,
     s_box: [[u8; 16]; 16],
-    inv_s_box: [[u8; 16]; 16]
+    inv_s_box: [[u8; 16]; 16],
+    nk: usize,
+    nr: usize,
+    nb: usize
 }
 
 pub trait WORD{
     fn sub_word(&mut self, s_box: &[[u8;16]; 16]);
+    fn rot_word(&mut self);
 }
 
 impl WORD for u32{
     fn sub_word(&mut self, s_box: &[[u8;16]; 16]){
         let mut t = (s_box[(*self >> 28) as usize][((*self >> 24) & 0xf) as usize] as Self) << 24;
-        t += (s_box[(*self >> 20) as usize][((*self >> 16) & 0xf) as usize]as Self) << 16;
-        t += (s_box[(*self >> 12) as usize][((*self >> 8) & 0xf) as usize] as Self) << 8;
-        t += s_box[(*self >> 4) as usize][((*self) & 0xf) as usize] as Self;
+        t += (s_box[((*self >> 20) & 0xf) as usize][((*self >> 16) & 0xf) as usize]as Self) << 16;
+        t += (s_box[((*self >> 12) & 0xf) as usize][((*self >> 8) & 0xf) as usize] as Self) << 8;
+        t += s_box[((*self >> 4) & 0xf) as usize][((*self) & 0xf) as usize] as Self;
         *self = t;
+    }
+    fn rot_word(&mut self) {
+        *self = self.rotate_left(8);
     }
 }
 
@@ -46,6 +54,7 @@ impl AES {
         AES{message: Vec::new(),
             key_len: key.len(),
             key: Vec::from_iter(key.iter().cloned()),
+            key_schedule: vec![],
             iv: Vec::from_iter(iv.iter().cloned()),
             s_box: [[0x63,  0x7c,  0x77,  0x7b,  0xf2,  0x6b,  0x6f,  0xc5,  0x30,  0x01,  0x67,  0x2b,  0xfe,  0xd7,  0xab,  0x76],
                     [0xca,  0x82,  0xc9,  0x7d,  0xfa,  0x59,  0x47,  0xf0,  0xad,  0xd4,  0xa2,  0xaf,  0x9c,  0xa4,  0x72,  0xc0],
@@ -64,6 +73,9 @@ impl AES {
                     [0xe1,  0xf8,  0x98,  0x11,  0x69,  0xd9,  0x8e,  0x94,  0x9b,  0x1e,  0x87,  0xe9,  0xce,  0x55,  0x28,  0xdf],
                     [0x8c,  0xa1,  0x89,  0x0d,  0xbf,  0xe6,  0x42,  0x68,  0x41,  0x99,  0x2d,  0x0f,  0xb0,  0x54,  0xbb,  0x16]],
             inv_s_box: [[0; 16]; 16],
+            nk: 4,
+            nr: 10,
+            nb: 4
             }
     }
 
@@ -103,8 +115,39 @@ impl AES {
             state[3][i] = buf[3];
         }
     }
+    fn rcon(i: usize) -> u32{
+        let mut rc: u32 = 1;
+        for e in 1..i {
+            if rc >= 0x80 {
+                rc = (rc << 1) ^ 0x11B;
+            } else {
+                rc <<= 1;
+            }
+        }
+        rc << 24
+    }
+    fn expand_key(&mut self){
+        self.key_schedule = vec![0; self.nb * (self.nr + 1)];
+        let mut buf = [0u8; 4];
+        for (i, chunk) in self.key.chunks(4).enumerate() {
+            buf.clone_from_slice(chunk);
+            self.key_schedule[i] = u32::from_be_bytes(buf);
+        }
+        let mut temp = 0;
+        for i in self.nk..self.nb * (self.nr + 1) {
+            temp = self.key_schedule[i - 1];
+            if i % self.nk == 0 {
+                temp.rot_word();
+                temp.sub_word(&self.s_box);
+                temp ^= AES::rcon(i / self.nk);
+            } else if self.nk > 6 && i % self.nk == 4 {
+                temp.sub_word(&self.s_box);
+                println!("HELLO LUV");
+            }
+            self.key_schedule[i] = self.key_schedule[i-self.nk] ^ temp;
+        }
+    }
 
-    fn expand_key(&mut self) {}
     fn add_round_key(&mut self) {}
     fn inv_shift_rows(&mut self) {}
     fn inv_sub_bytes(&mut self) {}
@@ -123,6 +166,7 @@ mod tests {
          [0x20, 0x21, 0x22, 0x23],
          [0x30, 0x31, 0x32, 0x33]]
     }
+    
     #[test]
     fn sub_bytes_test() {
         let aes = AES::aes(&[0xff], &[0xff]);
@@ -151,6 +195,35 @@ mod tests {
         assert_eq!(galois_mul(0x57, 0x83), 193);
     }
 
+    #[test]
+    fn rcon_test() {
+        assert_eq!(AES::rcon(1), 1 << 24, "rcon 1 is wrong");
+        assert_eq!(AES::rcon(4), 8 << 24, "rcon 4 is wrong");
+        assert_eq!(AES::rcon(6), 0x20 << 24, "rcon 4 is wrong");
+        assert_eq!(AES::rcon(8), 0x80 << 24, "rcon 8 is wrong");
+        assert_eq!(AES::rcon(9), 0x1B << 24, "rcon 9 is wrong");
+        assert_eq!(AES::rcon(10), 0x36 << 24, "rcon 10 is wrong");
+    }
+
+    #[test]
+    fn expand_key_test() {
+        // test data
+        // https://kavaliro.com/wp-content/uploads/2014/03/AES.pdf
+        let mut aes = AES::aes(&[0x54, 0x68, 0x61, 0x74, 0x73, 0x20, 0x6D, 0x79, 0x20, 0x4B, 0x75, 0x6E, 0x67, 0x20, 0x46, 0x75], &[0xff]);
+        aes.expand_key();
+        assert_eq!(aes.key_schedule, vec![0x54686174, 0x73206D79, 0x204B756E, 0x67204675, 
+                                          0xE232FCF1, 0x91129188, 0xB159E4E6, 0xD679A293, 
+                                          0x56082007, 0xC71AB18F, 0x76435569, 0xA03AF7FA, 
+                                          0xD2600DE7, 0x157ABC68, 0x6339E901, 0xC3031EFB, 
+                                          0xA11202C9, 0xB468BEA1, 0xD75157A0, 0x1452495B, 
+                                          0xB1293B33, 0x05418592, 0xD210D232, 0xC6429B69, 
+                                          0xBD3DC287, 0xB87C4715, 0x6A6C9527, 0xAC2E0E4E, 
+                                          0xCC96ED16, 0x74EAAA03, 0x1E863F24, 0xB2A8316A, 
+                                          0x8E51EF21, 0xFABB4522, 0xE43D7A06, 0x56954B6C, 
+                                          0xBFE2BF90, 0x4559FAB2, 0xA16480B4, 0xF7F1CBD8, 
+                                          0x28FDDEF8, 0x6DA4244A, 0xCCC0A4FE, 0x3B316F26]);
+    }
+    
     #[test]
     fn mix_columns_test() {
         let aes = AES::aes(&[0xff], &[0xff]);
