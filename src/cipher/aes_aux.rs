@@ -54,18 +54,20 @@ fn mix_columns(state: &mut [u8], nb: usize ) {
     let mut buf = vec![0; nb];
     for i in 0..nb {
         for x in 0..nb {
+            buf[x] = 0;
             for y in 0..nb {
                 if y == x {
                     buf[x] ^= galois_mul(0x02, state[y * nb + i]);
-                } else if (y > 0 && y - 1 == x) || x == nb -1 {
+                } else if (y > 0 && y - 1 == x) || (x == nb -1 && y == 0) {
                     buf[x] ^= galois_mul(0x03, state[y * nb + i]);
                 } else {
                     buf[x] ^= state[y * nb + i];
                 }
             }
         }
+        println!("");
         for e in 0..nb {
-            state[e * nb + i] = buf[i];
+            state[e * nb + i] = buf[e];
         }
     }
 }
