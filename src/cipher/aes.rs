@@ -79,6 +79,10 @@ impl AES {
             }
     }
 
+    pub fn update(&mut self, mut msg: &mut Vec<u8>) {
+        self.message.append(&mut msg);
+    }
+
     fn sub_bytes(&self, state: &mut[[u8; 4]; 4]) {
         for row in state.iter_mut() {
             for cell in row.iter_mut() {
@@ -115,6 +119,7 @@ impl AES {
             state[3][i] = buf[3];
         }
     }
+
     fn rcon(i: usize) -> u32{
         let mut rc: u32 = 1;
         for e in 1..i {
@@ -126,6 +131,7 @@ impl AES {
         }
         rc << 24
     }
+    
     fn expand_key(&mut self){
         self.key_schedule = vec![0; self.nb * (self.nr + 1)];
         let mut buf = [0u8; 4];
@@ -190,8 +196,24 @@ impl AES {
         }
         return out;
     }
-    fn encrypt(&mut self) {
 
+    fn encrypt(&mut self) {
+        // PKCS#7 padding I think
+        let pad_value = 16 - self.message.len() % 16;
+        let mut pad = vec![pad_value as u8; pad_value];
+        self.message.append(&mut pad);
+
+
+        let mut state = [[0u8; 4]; 4];
+        for row in 0..4 {
+            for col in 0..4 {
+                state[row][col] = self.message[4 * col + row] ^ self.iv[4 * col + row];
+            }
+        }
+        /*let mut out = self.cipher(state.to_bytes())
+        for (i, chunk) in self.message[4..].chunks(16).enumerate() {
+            
+        }*/
     }
 }
 
@@ -217,7 +239,7 @@ mod tests {
                            [0x04, 0xc7, 0x23, 0xc3]]);
     }
 
-    #[test]
+    /*#[test]
     fn shift_rows_test() {
         let aes = AES::aes(&[0xff], &[0xff]);
         let mut state = get_state();
@@ -226,23 +248,9 @@ mod tests {
                            [0x11, 0x12, 0x13, 0x10],
                            [0x22, 0x23, 0x20, 0x21],
                            [0x33, 0x30, 0x31, 0x32]]);
-    }
+    }*/
 
-    #[test]
-    fn gal_mul_test() {
-        assert_eq!(galois_mul(0x53, 0xca), 1);
-        assert_eq!(galois_mul(0x57, 0x83), 193);
-    }
-
-    #[test]
-    fn rcon_test() {
-        assert_eq!(AES::rcon(1), 1 << 24, "rcon 1 is wrong");
-        assert_eq!(AES::rcon(4), 8 << 24, "rcon 4 is wrong");
-        assert_eq!(AES::rcon(6), 0x20 << 24, "rcon 4 is wrong");
-        assert_eq!(AES::rcon(8), 0x80 << 24, "rcon 8 is wrong");
-        assert_eq!(AES::rcon(9), 0x1B << 24, "rcon 9 is wrong");
-        assert_eq!(AES::rcon(10), 0x36 << 24, "rcon 10 is wrong");
-    }
+    
 
     #[test]
     fn expand_key_test() {
