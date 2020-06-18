@@ -180,15 +180,5 @@ mod tests {
                                       0xE0, 0xDD, 0x6C, 0x20, 0xA3, 0xCD, 0x44, 0xA0,
                                       0x89, 0xDE, 0x16, 0xAB, 0x4A, 0xB3, 0x08, 0xF6, 
                                       0x3E, 0x44, 0xB1, 0x17, 0x0E ,0xB5, 0xF5, 0x15]);
-
-        // Test multiple use like Pythons hashlib
-        let mut sha1 = Sha3::sha384();
-        sha1.update("Bananensaft".to_string());
-        assert_eq!(sha1.hexdigest(), "49FCB242DAECD652549AED45A043633CCAA45591BDED1018CDA53390688A232E8DDF441EDCD691686CD5BC705E1606B3".to_string());
-        sha1.update("Schokokuchen".to_string());
-
-        let mut sha2 = Sha3::sha384();
-        sha2.update("BananensaftSchokokuchen".to_string());
-        assert_eq!(sha1.hexdigest(), sha2.hexdigest()); 
     }
 }
